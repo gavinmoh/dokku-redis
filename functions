@@ -93,6 +93,10 @@ service_create_container() {
   DOCKER_ARGS+=("--volume=$SERVICE_HOST_ROOT/$PLUGIN_CONFIG_SUFFIX:/usr/local/etc/redis")
   DOCKER_ARGS+=("--volume=$SERVICE_HOST_ROOT/data:/data")
 
+  # Redis Stack specific environment variables
+  DOCKER_ARGS+=("--env=REDISEARCH_ARGS=MAXSEARCHRESULTS 10000 MAXAGGREGATERESULTS 10000")
+  DOCKER_ARGS+=("--env=REDIS_ARGS=--protected-mode no --daemonize no")
+  
   declare -a LINK_CONTAINER_DOCKER_ARGS
   LINK_CONTAINER_DOCKER_ARGS=()
   LINK_CONTAINER_DOCKER_ARGS+=("--rm")
@@ -119,8 +123,8 @@ service_create_container() {
     LINK_CONTAINER_DOCKER_ARGS+=("--network=${network}")
   fi
 
-  # shellcheck disable=SC2086
-  suppress_output "$DOCKER_BIN" container create "${DOCKER_ARGS[@]}" "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION" redis-server /usr/local/etc/redis/redis.conf --bind 0.0.0.0 $CONFIG_OPTIONS
+  # Modified to use Redis Stack's default entry point
+  suppress_output "$DOCKER_BIN" container create "${DOCKER_ARGS[@]}" "$PLUGIN_IMAGE:$PLUGIN_IMAGE_VERSION" 
 
   if [[ -n "$(fn-plugin-property-get "$PLUGIN_COMMAND_PREFIX" "$SERVICE" "post-create-network")" ]]; then
     dokku_log_verbose_quiet "Connecting to networks after container create"
